@@ -1,0 +1,98 @@
+<script>
+/* ===== MyFootball 27: PWA + Save add-on (paste before </body>) ===== */
+(function(){
+  /* ---------- PWA: icon, manifest, theme color (all generated inline) ---------- */
+  function makeIcon(n){
+    const c=document.createElement("canvas");c.width=c.height=n;const x=c.getContext("2d");
+    x.fillStyle="#13294b";x.fillRect(0,0,n,n);
+    x.fillStyle="#1e8a3e";x.fillRect(n*0.08,n*0.08,n*0.84,n*0.84);
+    x.save();x.translate(n/2,n/2);x.rotate(-0.4);
+    x.fillStyle="#8B4513";x.strokeStyle="#fff";x.lineWidth=Math.max(2,n/50);
+    x.beginPath();x.ellipse(0,0,n*0.3,n*0.18,0,0,Math.PI*2);x.fill();x.stroke();
+    x.beginPath();x.moveTo(-n*0.12,0);x.lineTo(n*0.12,0);x.stroke();
+    for(let i=-2;i<=2;i++){x.beginPath();x.moveTo(i*n*0.05,-n*0.04);x.lineTo(i*n*0.05,n*0.04);x.stroke();}
+    x.restore();
+    return c.toDataURL("image/png");
+  }
+  try{
+    const icon512=makeIcon(512), icon192=makeIcon(192), icon180=makeIcon(180);
+    document.querySelectorAll('link[rel="apple-touch-icon"]').forEach(l=>l.href=icon180);
+    if(!document.querySelector('link[rel="apple-touch-icon"]')){
+      const a=document.createElement("link");a.rel="apple-touch-icon";a.href=icon180;document.head.appendChild(a);
+    }
+    if(!document.querySelector('meta[name="theme-color"]')){
+      const t=document.createElement("meta");t.name="theme-color";t.content="#13294b";document.head.appendChild(t);
+    }
+    const manifest={
+      name:"MyFootball 27",short_name:"MyFootball 27",
+      start_url:location.href.split("#")[0],scope:location.href.split("#")[0].replace(/[^\/]*$/,""),
+      display:"standalone",orientation:"portrait",
+      background_color:"#0a1a2f",theme_color:"#13294b",
+      icons:[{src:icon192,sizes:"192x192",type:"image/png"},{src:icon512,sizes:"512x512",type:"image/png",purpose:"any"}]
+    };
+    const m=document.createElement("link");m.rel="manifest";
+    m.href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"}));
+    document.head.appendChild(m);
+  }catch(e){}
+
+  /* ---------- SAVE SYSTEM ---------- */
+  const KEY="myfootball27_save_v1";
+  function snapshot(){return{coins,xp,level,wins,losses,questsDone,myPlayer,myTeamCards,gameLog,careerGames,objectives:objectives.map(o=>o.done),myTeam,jersey,viewMode,gameMode};}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(snapshot()));}catch(e){}}
+  function load(){
+    let d;try{d=JSON.parse(localStorage.getItem(KEY)||"null");}catch(e){d=null;}
+    if(!d)return false;
+    try{
+      if(typeof d.coins==="number")coins=d.coins;
+      if(typeof d.xp==="number")xp=d.xp;
+      if(typeof d.level==="number")level=d.level;
+      if(typeof d.wins==="number")wins=d.wins;
+      if(typeof d.losses==="number")losses=d.losses;
+      if(typeof d.questsDone==="number")questsDone=d.questsDone;
+      if(d.myPlayer)myPlayer=d.myPlayer;
+      if(Array.isArray(d.myTeamCards)&&d.myTeamCards.length)myTeamCards=d.myTeamCards;
+      if(Array.isArray(d.gameLog))gameLog=d.gameLog;
+      if(Array.isArray(d.careerGames))careerGames=d.careerGames;
+      if(Array.isArray(d.objectives))d.objectives.forEach((v,i)=>{if(objectives[i])objectives[i].done=!!v;});
+      if(d.myTeam&&TEAMS[d.myTeam])myTeam=d.myTeam;
+      if(["home","away","alt"].includes(d.jersey))jersey=d.jersey;
+      if(d.viewMode)viewMode=d.viewMode;
+      if(d.gameMode)gameMode=d.gameMode;
+      document.getElementById("teamSel").value=myTeam;
+      document.getElementById("viewSel").value=viewMode;
+      document.getElementById("modeSel").value=gameMode;
+      document.getElementById("pName").value=myPlayer.name;
+      document.getElementById("pPos").value=myPlayer.pos;
+      [...document.getElementById("pFace").options].forEach(o=>{if(o.value===myPlayer.face)o.selected=true;});
+      document.getElementById("pHair").value=myPlayer.hair;
+      document.getElementById("pBuild").value=myPlayer.build;
+      [["SPD","spd"],["THP","thp"],["CTH","cth"],["TAK","tak"]].forEach(([id,k])=>{
+        document.getElementById("r"+id).value=myPlayer[k];
+        document.getElementById("v"+id).textContent=myPlayer[k];
+      });
+      updateFace();applyJersey();renderCall();update();
+      return true;
+    }catch(e){return false;}
+  }
+  const _updateHub=updateHub;
+  updateHub=function(){_updateHub.apply(this,arguments);save();};
+  const _setJersey=setJersey;
+  setJersey=function(){_setJersey.apply(this,arguments);save();};
+  const loaded=load();
+  updateHub();
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)save();});
+  window.addEventListener("pagehide",save);
+  const hubMsg=document.getElementById("hubMsg");
+  if(hubMsg){
+    const b=document.createElement("button");
+    b.className="small";b.textContent="🗑 Reset Save";
+    b.onclick=()=>{if(confirm("Erase all saved progress?")){try{localStorage.removeItem(KEY);}catch(e){}location.reload();}};
+    hubMsg.parentNode.appendChild(b);
+    if(loaded)hubMsg.textContent="Progress loaded. Welcome back to ULTIMATE!";
+  }
+})();
+</script>
+renderCall();update();reset();applyJersey();updateHub();loop();
+</script>
+</body>
+</html>
